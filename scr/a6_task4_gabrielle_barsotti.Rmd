@@ -1,0 +1,59 @@
+---
+title: "a6_task4_gabrielle_barsotti"
+author: "Gabrielle Barsotti"
+date: "12/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor) 
+library(here)
+library(broom)
+library(kableExtra) 
+library(stargazer) 
+library(GGally)
+library(ggbeeswarm)
+library(effsize)
+```
+
+```{r, include=FALSE}
+
+#Step 1: Reading in the data and cleaning the names
+
+mono_lake <- read_csv(here("data", "mono_lake_annual_levels.csv"), skip = 5) %>%
+  clean_names()
+```
+
+```{r, echo = FALSE}
+
+#Step 2: Creating a visualization to show changes in lake levels
+
+#Create a ggplot with a geomline ontop
+ ggplot(data = mono_lake, 
+  aes(x = year, y = lake_level_feet_above_sea_level)) + 
+  geom_point() + 
+  geom_line() +
+  labs(x = "Year", 
+       y = "Lake Levels (feet above sea level)", 
+       title = "Levels of Mono Lake from 1850 - 2017",
+       caption = "*Data sourced from the Mono Basin Clearinghouse") +
+  annotate("text", x = 1970, y = 6423, label = "1941: Water Diversions Began") +
+  annotate("text", x = 1998, y = 6390, label = "1998: Restoration begins") +
+  annotate("text", x = 1871, y = 6395, label = "6,392 ft - Stable water level") + 
+  annotate("text", x = 1875, y = 6380, label = "6,377 ft - Land bridges emerge") + 
+  annotate("text", x = 1890, y = 6365, label = "6,360 ft - Low salinity levels impact bird species") + 
+  annotate("text", x = 1880, y = 6355, label = "6,350 ft - Critically low salinity levels ") + 
+  geom_hline(yintercept = 6392, color = "purple") +
+  geom_hline(yintercept = 6377, color = "blue") +
+  geom_hline(yintercept = 6360, color = "red") + 
+  geom_hline(yintercept = 6350, color = "orange") + 
+  theme_minimal()
+
+```
+
+
+
+
+Figure 1: Historic lake levels (feet above sea level) in Mono Lake, California.  Important dates show major changes in water level trends.  Significant water levels depicted for stable lake levels, the emergence of land bridges and salinity levels.    
