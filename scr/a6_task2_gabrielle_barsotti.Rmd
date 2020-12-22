@@ -1,0 +1,85 @@
+---
+title: "a6_task2_gabrielle_barsotti"
+author: "Gabrielle Barsotti"
+date: "12/20/2020"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+library(here)
+library(broom)
+library(kableExtra) 
+library(stargazer) 
+library(GGally)
+```
+
+## Overview
+
+In this document, survey responses for political and environmentalist self-identification were explored.  First, political affiliation (liberal or conservative), was compared with with counts and proportions of respondents within each party affiliation who self-identified as either an environmentalist ("Yes" response), non-environmentalist ("No" response), or unsure of whether to identify as an environmentalist or not ("Unsure" response).  The total counts and proportions are provided in Table 1.  Next, a chi-squared test was run to understand how outcomes differ between proportions within groups, and test for independence of these variables.  More simply put, the goal of this task was to determine if there is an association between political affiliation and environmental identity.
+
+```{r, include = FALSE}
+# Step 1: Reading in the data
+
+conservation_survey <- read_csv(here("data", "conservation_survey.csv")) %>%  
+  clean_names() #cleaning up the names and column headers to lowercase.
+
+```
+
+```{r, echo = FALSE}
+# Creating a subset of the data
+
+orientation <- conservation_survey %>% #Data set fot environmental ID and political orientation
+  select(env_id, pol_or) %>% 
+  filter(!pol_or %in% c(4,8,9)) %>% #Filtering out 4, 8, 9
+  mutate(pol_party = case_when(  #New column name for political parties
+    pol_or %in% c(1:3) ~ "Conservative", #Assign conservative for any 1 through 3
+    pol_or %in% c(5:7) ~ "Liberal")) #Assign liberal for any 5 through 7 
+```
+
+### Table 1. Political Affiliation & Percentage of Environmental Identity
+```{r, echo = FALSE}
+
+## Step 3. Find counts & proportions, put in a table
+
+orientation_counts <- orientation %>% #New data set for counts
+  janitor::tabyl(pol_party, env_id) #Table for political party and environmental identification
+
+#Creating a table with both counts & proportions
+
+party_proportions <- orientation_counts %>% 
+  adorn_percentages() %>% 
+  janitor::adorn_pct_formatting(digits = 2) %>% #Format to only 2 digits
+  adorn_ns()
+
+kable(party_proportions,
+  col.names = c("Political Affiliation", "Yes", "No", "Unsure")) %>% #Assign column names 
+  kable_styling(full_width = FALSE, "striped") #Add kable_style to make the columns/styling nicer - "striped" makes the rows have grey color
+```
+
+```{r, include = FALSE}
+
+## Step 4. Make contingency table and run chi-square
+
+party_ct <- orientation_counts %>% 
+  column_to_rownames(var = "pol_party") #Convert entries in a column to stored rownames: 
+
+party_x2 <- chisq.test(party_ct) #Assigned a new data frame for the chi-squared test results
+party_x2
+
+# Make this data tidy in the chi-squared data frame so it can be used for inline referencing
+party_tidy <- tidy(party_x2)
+```
+
+## Summary 
+
+When comparing counts within groups, the variables could be considered independent IF the counts make the response proportions the same across all groups.  However, this is not the case in this scenario.  For example, there is a higher percentage of liberal respondents that consider themselves environmentalists as compared to conservative respondents. Therefore, the null hypothesis (independence) is likely false.  Table 1 shows that the actual counts are different enough that it is assumed that political affiliation and environmental identity are not independent.  The results of the chi-squared test found that there is a significant association between party affiliation and environmental identity. ($\chi$^2^(`r party_tidy$parameter`) = `r round(party_tidy$statistic,2)`, *p* = `r round(party_tidy$p.value, 3)`).  
+
+*Note that non-responses could be a major source of bias in this study data. 
+
+### Citation:
+Andrews Forest LTER Site and C. Batavia. 2019. Influences on charitable giving for conservation: Online survey data of 1,331 respondents across the US, August 2017 ver 3. Environmental Data Initiative. [Link](https://doi.org/10.6073/pasta/926e6270e324a1322a900da14d38b96c)
+
+Metadata: [Link](https://portal.edirepository.org/nis/metadataviewer?packageid=knb-lter-and.5444.3)
