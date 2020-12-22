@@ -42,7 +42,7 @@ orientation <- conservation_survey %>% #Data set fot environmental ID and politi
 ### Table 1. Political Affiliation & Percentage of Environmental Identity
 ```{r, echo = FALSE}
 
-## Step 3. Find counts & proportions, put in a table
+#Step 3. Find counts & proportions
 
 orientation_counts <- orientation %>% #New data set for counts
   janitor::tabyl(pol_party, env_id) #Table for political party and environmental identification
@@ -56,12 +56,12 @@ party_proportions <- orientation_counts %>%
 
 kable(party_proportions,
   col.names = c("Political Affiliation", "Yes", "No", "Unsure")) %>% #Assign column names 
-  kable_styling(full_width = FALSE, "striped") #Add kable_style to make the columns/styling nicer - "striped" makes the rows have grey color
+  kable_styling(full_width = FALSE, "striped") #Kable_style for aesthetics 
 ```
 
 ```{r, include = FALSE}
 
-## Step 4. Make contingency table and run chi-square
+#Step 4. Contingency table and chi-square test
 
 party_ct <- orientation_counts %>% 
   column_to_rownames(var = "pol_party") #Convert entries in a column to stored rownames: 
@@ -75,7 +75,7 @@ party_tidy <- tidy(party_x2)
 
 ## Summary 
 
-When comparing counts within groups, the variables could be considered independent IF the counts make the response proportions the same across all groups.  However, this is not the case in this scenario.  For example, there is a higher percentage of liberal respondents that consider themselves environmentalists as compared to conservative respondents. Therefore, the null hypothesis (independence) is likely false.  Table 1 shows that the actual counts are different enough that it is assumed that political affiliation and environmental identity are not independent.  The results of the chi-squared test found that there is a significant association between party affiliation and environmental identity. ($\chi$^2^(`r party_tidy$parameter`) = `r round(party_tidy$statistic,2)`, *p* = `r round(party_tidy$p.value, 3)`).  
+When comparing counts within the two groups conservative and liberal, the variables could be considered independent IF the counts make the response proportions the same across all groups.  However, this is not the case because there is a higher percentage of liberal respondents that consider themselves environmentalists as compared to conservative respondents. Therefore, the null hypothesis (independence) is likely false.  Table 1 shows that the actual counts are different enough that it is assumed that political affiliation and environmental identity are not independent.  The results of the chi-squared test found that there is a significant association between party affiliation and environmental identity. ($\chi$^2^(`r party_tidy$parameter`) = `r round(party_tidy$statistic,2)`, *p* = `r round(party_tidy$p.value, 3)`).  
 
 *Note that non-responses could be a major source of bias in this study data. 
 
