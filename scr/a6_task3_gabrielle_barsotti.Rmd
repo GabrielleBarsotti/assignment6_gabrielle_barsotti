@@ -1,0 +1,163 @@
+---
+title: "a6_task3_gabrielle_barsotti"
+author: "Gabrielle Barsotti"
+date: "12/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor) 
+library(here)
+library(broom)
+library(kableExtra) 
+library(stargazer) 
+library(GGally)
+library(ggbeeswarm)
+library(effsize)
+```
+
+## Overview
+
+In this document, a comparison was made between the lengths of female lizards of two species, Cnemidophorus uniparens, Desert Grassland lizard (CNUN) and Cnemidophorus tessalatus, Colorado Checkered lizard (CNTE). The data was explored using ggpairs analysis, histograms and GG-plots, and analysis of mean and standard deviation of the two species. Figure 1 provides a visual comparison and Table 1 provides the summary statistics. As a result of the data exploration, it was determined that it would be appropriate to run a two-sided t-test to understand the relationship between lizard species and total body length. Then Cohen's d effect size was calculated to determine the difference between mean lengths for the two species.
+
+```{r, include = FALSE}
+
+#Step 1: Read in data and clean the names
+
+lizards <- read_csv(here("data", "lizards.csv")) %>%  
+  clean_names()
+```
+
+```{r, include = FALSE}
+
+#Step 2. Making a subset
+
+lizards_subset <- lizards %>% # Created a data set for just species, sex length
+  select(spp, sex, total_length) %>% 
+  filter(sex =="F") %>% # This filters out ONLY Female
+  filter(spp %in% c("CNUN","CNTE")) %>%
+  filter(!total_length == "NA")
+```
+
+```{r, include = FALSE}
+
+#Step 3. Exploratory GG Plot
+
+ lizards_subset %>% 
+  ggpairs(aes(color = spp))
+
+# Data comparisons:
+# Coral = Desert Grassland lizard and turquoise = Colorado Checkered lizard
+# They have Different means and both species length seem normally distributed but with a possibly of being negatively skewed
+# Desert may have more intra-population variance
+# The sample size is really small for both, but especially small for the Desert Grassland lizard with has less than 30 samples
+```
+
+```{r, echo = FALSE}
+
+#Step 4. Visualizations
+
+# Visualize lizard length by species and create a beeswarm plot, then plot the data with mean and SE shown on top 
+
+ggplot(data = lizards_subset, aes(x = spp, y = total_length)) + #Created ggplot using sex and length
+  geom_beeswarm(aes(color = spp), show.legend = FALSE) + #Created beeswarm graph within the ggplot function and take out the legend
+  stat_summary(fun=mean,   # Inserted summary statistics into the graph
+               geom = "point",
+               shape = 20,
+               size = 4,
+               color = "black",
+               fill = "black") +
+  geom_boxplot(fill = NA, width = 0.5, outlier.color = NA) +
+  theme_minimal() +
+  labs(x = "Species", # Labeled the graph with x and y axis and title
+       y = "Lizard Length (mm)",
+       title = "Female Lizard Length by Species")
+
+```
+
+Figure 1. Histogram shows the total counts of lizard length measurements by species - Desert Grassland lizard (CNUN) and Cnemidophorus tessalatus, the Colorado Checkered lizard (CNTE).
+
+Table 1. Distribution of lizard length by species - Desert Grassland lizard (CNUN) and the Cnemidophorus tessalatus, the Colorado Checkered lizard (CNTE). 
+
+```{r, include=FALSE}
+
+#Step 5. Summary Statistics Table
+
+lizards_summary <- lizards_subset %>% # Created a separate table to summarize the stats
+  filter(spp == "CNTE" | spp == "CNUN") %>% 
+  group_by(spp) %>% # Group by sex
+  summarize(
+    mean_length = round(mean(total_length),2),
+    sd_length = round(sd(total_length),2),
+    sample_size = n()) # Include the sample size in the summary statistics table
+```
+
+```{r, echo = FALSE}
+ kable(lizards_summary, 
+       col.names = c("Species", "Mean Length (mm)", "Standard Deviation", "Sample Size")) %>%
+   kable_styling(full_width = FALSE) 
+```
+
+
+```{r, include = FALSE}
+
+#Step 6. Further exploration
+
+# Pull vectors of length for the two species
+
+CNTE <- lizards_subset %>% # Created a new dataset for CNTE species
+  filter(spp == "CNTE") %>%
+  pull(total_length) # Pulled the length
+
+CNUN <- lizards_subset %>% # Create a new dataset for CNUN species
+  filter(spp == "CNUN") %>%
+  pull(total_length) # Pulled the length
+
+# Plot histograms & qq-plots to check assumptions
+hist(CNTE) # Slightly skewed
+qqnorm(CNTE) # Fairly linear
+hist(CNUN) # Slightly skewed, less of a spread
+qqnorm(CNUN) # Seems pretty linear
+```
+
+
+```{r, include=FALSE}
+
+#Step 7. Running a t-test
+
+# Exploring the data: Do not include this in the final report
+lizards_ttest <- t.test(CNTE, CNUN) # Run a two sample t-test for the two species
+
+lizards_ttest # This calls one format of the T-test (the one we are used to seeing in lecture)
+
+# Get the tidy model results to call outputs for in-line referencing : 
+lizards_ttest_tidy <- tidy(lizards_ttest)
+
+lizards_ttest_tidy # This calls the tidy version of the T-test
+
+#The t-test results show: Estimate = Difference between means, Estimate 1 = mean for male, Estimate 2 = mean for female, Statistic = t-value, Parameter = Degrees of Freedom 
+```
+
+```{r, include=FALSE}
+
+#Step 8. Finding the effect size using Cohen's d
+
+# Getting the effect size
+lizards_effsize <- cohen.d(CNTE, CNUN)
+
+lizards_effsize
+```
+
+## Summary 
+On average, female Colorado Checkered lizards (CNTE) have a longer body length than female Desert Grassland lizards at the Jornada Basin LTER. (`r lizards_summary$mean_length[1]` ± `r lizards_summary$sd_length[1]` and `r lizards_summary$mean_length[2]` ± `r lizards_summary$sd_length[2]`, respectively; mean ± 1 standard deviation).
+
+While the absolute difference in means is `r (lizards_summary$mean_length[1]) - (lizards_summary$mean_length[2])` mm (a `r round((lizards_summary$mean_length[1] - lizards_summary$mean_length[2])/(lizards_summary$mean_length[2] + lizards_summary$mean_length[1])*100, 2)`% difference in relation to the CNUN species), the difference in means is significant (Welch's two-sample t-test: t(`r round(lizards_ttest_tidy$parameter,2)`) = `r round(lizards_ttest_tidy$statistic,2)`, p > 0.008), and the effect size is large (Cohen's *d* = `r round(lizards_effsize$estimate,2)`).  (Figure 1 and Table 1).
+
+
+Citation:
+
+Lightfoot, D. 2017. Lizard pitfall trap data (LTER-II, LTER-III) ver 36. Environmental Data Initiative.  [Link](https://doi.org/10.6073/pasta/ff37b4cace16a9943575f3fd7067064e)
+
+Metadata: [Link](https://portal.edirepository.org/nis/metadataviewer?packageid=knb-lter-jrn.210007001.36)
